@@ -1,21 +1,30 @@
-import React, {Component} from 'react'
+import React, {Component} from 'react';
+import axios from 'axios';
 
 class ToDoList extends Component {
     constructor(props){
         super(props);
         this.state={
-            todolist: ["a","b","c"],
+            todoList: [],
             newItem:'',
             searchItem:'',
-            confirmedSearchItem:''
+            confirmedSearchItem:'',
+            listBuffer: []
         }
     }
 
+    componentDidMount() {
+        axios.get(`https://jsonplaceholder.typicode.com/posts`)
+             .then(res => {
+                 this.setState({todoList: res.data})
+             });
+    }
+
     addItem = () =>{
-        let tempList = [...this.state.todolist];
+        let tempList = [...this.state.todoList];
         tempList.push(this.state.newItem);
         this.setState({
-            todolist: tempList,
+            todoList: tempList,
             newItem: ''
         });
     }
@@ -37,16 +46,29 @@ class ToDoList extends Component {
         });
     }
 
-    removeItem = (e) => {
-        let tempList = [...this.state.todolist];
-        tempList.splice(e.target.value,1);
+    setToDoList = () => {
+        let tempList = [...this.state.listBuffer];
         this.setState({
-            todolist: tempList
+            todoList: tempList
+        });
+    }
+
+    removeItem = (e) => {
+        let tempList = [...this.state.todoList];
+        tempList.splice(e.target.value,1);
+        this.setState(prevState => {
+            return{
+                listBuffer: prevState.todoList,
+                todoList: tempList
+            }
         });
     }
     removeAll = () => {
-        this.setState({
-            todolist: []
+        this.setState(prevState => {
+            return{
+                listBuffer: prevState.todoList,
+                todoList: []
+            }
         });
     }
     
@@ -64,14 +86,16 @@ class ToDoList extends Component {
             </div>
             <div>
             <input type="button" value="REMOVE ALL" onClick={()=>{this.removeAll()}}/>
+            <input type="button" value="UNDO" onClick={()=>{this.setToDoList()}}/>
             </div>
             <div>
                 <ul>
-                {this.state.todolist.map((item, index)=>{
-                    if(this.state.confirmedSearchItem.length==0 || item.startsWith(this.state.confirmedSearchItem))
+                {this.state.todoList.map((item, index)=>{
+                    if(this.state.confirmedSearchItem.length===0 || item.startsWith(this.state.confirmedSearchItem))
                     {
-                        return <li value={index} onClick={(e)=>{this.removeItem(e)}}>{index+1}. {item}</li>
+                        return <li value={index} onClick={(e)=>{this.removeItem(e)}}>{index+1}. {item.title}</li>
                     }
+                    return null;
                 })}
                 </ul>
             </div>
